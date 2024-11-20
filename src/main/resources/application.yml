@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+
+  application:
+    name: Collaborative Markdown Editor
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    driverClassName: org.h2.Driver
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+
+  mail:
+      username: ${SPRING_MAIL_USERNAME}
+      password: ${SPRING_MAIL_PASSWORD}
+
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    root: debug
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    root: info
