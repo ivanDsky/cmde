@@ -26,7 +26,7 @@ class User(
 
     override fun getAuthorities(): Collection<GrantedAuthority> = emptyList()
 
-    override fun getUsername(): String = email
+    override fun getUsername(): String = username
 
     override fun getPassword(): String = password
     override fun isEnabled(): Boolean = enabled

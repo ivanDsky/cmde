@@ -35,12 +35,11 @@ class AuthenticationService(
     }
 
     fun authenticate(input: LoginUserDto): User {
-        val user = userRepository.findByEmail(input.email)
-            ?: throw IllegalArgumentException("User with email \"${input.email}\" not found")
+        val user = findUserByLogin(input)
 
         if (!user.isEnabled) throw IllegalArgumentException("Account not verified. Please check your email.")
 
-        authenticationManager.authenticate(UsernamePasswordAuthenticationToken(input.email, input.password))
+        authenticationManager.authenticate(UsernamePasswordAuthenticationToken(user.username, input.password))
 
         return user
     }
@@ -80,8 +79,34 @@ class AuthenticationService(
 
     fun sendVerificationEmail(user: User) {
         val subject = "Account verification"
-        val verificationCode = user.verificationCode.toString()
-        val htmlMessage = """
+        val htmlMessage = generateVerificationCodeEmail(user.verificationCode)
+        try {
+            emailService.sendVerificationEmail(user.email, subject, htmlMessage)
+        } catch (e: MessagingException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun generateVerificationCode(): String {
+        return (100000..999999).random().toString()
+    }
+
+    private fun findUserByLogin(loginUserDto: LoginUserDto): User {
+        if (loginUserDto.email != null) {
+            return userRepository.findByEmail(loginUserDto.email)
+                ?: throw IllegalArgumentException("User with email \"${loginUserDto.email}\" not found")
+        }
+
+        if (loginUserDto.username != null) {
+            return userRepository.findByUsername(loginUserDto.username)
+                ?: throw IllegalArgumentException("User with username \"${loginUserDto.username}\" not found")
+        }
+
+        throw IllegalArgumentException("User didn't provide email or username")
+    }
+}
+
+private fun generateVerificationCodeEmail(verificationCode: String?): String = """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -160,14 +185,3 @@ class AuthenticationService(
             </body>
             </html>
         """.trimIndent()
-        try {
-            emailService.sendVerificationEmail(user.email, subject, htmlMessage)
-        } catch (e: MessagingException) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun generateVerificationCode(): String {
-        return (100000..999999).random().toString()
-    }
-}

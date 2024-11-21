@@ -10,6 +10,8 @@ import ua.ivandsky.cmde.dto.RegisterUserDto
 import ua.ivandsky.cmde.dto.VerifyUserDto
 import ua.ivandsky.cmde.model.User
 import ua.ivandsky.cmde.response.LoginResponse
+import ua.ivandsky.cmde.response.UserResponse
+import ua.ivandsky.cmde.response.toUserResponse
 import ua.ivandsky.cmde.service.AuthenticationService
 import ua.ivandsky.cmde.service.JWTService
 
@@ -20,9 +22,9 @@ class AuthenticationController(
     private val authenticationService: AuthenticationService,
 ) {
      @PostMapping("/sign-up")
-     fun signUp(@RequestBody input: RegisterUserDto): ResponseEntity<User> {
+     fun signUp(@RequestBody input: RegisterUserDto): ResponseEntity<UserResponse> {
          val user = authenticationService.signUp(input)
-         return ResponseEntity.ok(user)
+         return ResponseEntity.ok(user.toUserResponse())
      }
 
      @PostMapping("/login")

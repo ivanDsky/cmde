@@ -11,29 +11,25 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import ua.ivandsky.cmde.repository.UserRepository
+import ua.ivandsky.cmde.service.UserService
 
 @Configuration
 class ApplicationConfig(
-    private val userRepository: UserRepository
+    private val userService: UserService,
+    private val config: AuthenticationConfiguration,
 ) {
-    @Bean
-    fun userDetailsService(): UserDetailsService = UserDetailsService { email: String ->
-        userRepository.findByEmail(email) ?:
-            throw UsernameNotFoundException("User with email: $email not found")
-    }
-
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
-    fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager = config.authenticationManager
+    fun authenticationManager(): AuthenticationManager = config.authenticationManager
 
     @Bean
     fun authenticationProvider(): AuthenticationProvider {
         val authProvider = DaoAuthenticationProvider()
 
         authProvider.apply {
-            setUserDetailsService(userDetailsService())
+            setUserDetailsService(userService)
             setPasswordEncoder(passwordEncoder())
         }
 

@@ -1,7 +1,6 @@
 package ua.ivandsky.cmde.config
 
 import jakarta.servlet.FilterChain
-import jakarta.servlet.http.HttpFilter
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -33,12 +32,12 @@ class JwtAuthenticationFilter(
 
         try {
             val jwt = authHeader.substring(7)
-            val userEmail = jwtService.extractUsername(jwt)
+            val username = jwtService.extractUsername(jwt)
 
             val authentication = SecurityContextHolder.getContext().authentication
 
             if (authentication == null) {
-                val userDetails = userDetailsService.loadUserByUsername(userEmail)
+                val userDetails = userDetailsService.loadUserByUsername(username)
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     val authToken = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
                     authToken.details = WebAuthenticationDetailsSource().buildDetails(request)
