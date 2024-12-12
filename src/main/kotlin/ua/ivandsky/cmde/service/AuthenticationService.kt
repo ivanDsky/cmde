@@ -24,6 +24,7 @@ class AuthenticationService(
             username = input.username,
             email = input.email,
             password = passwordEncoder.encode(input.password),
+            provider = "local",
             verificationCode = generateVerificationCode(),
             verificationExpiresAt = LocalDateTime.now().plusMinutes(15),
             enabled = false,

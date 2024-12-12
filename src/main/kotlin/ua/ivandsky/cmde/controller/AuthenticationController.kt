@@ -1,6 +1,7 @@
 package ua.ivandsky.cmde.controller
 
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -50,6 +51,16 @@ class AuthenticationController(
         try {
             authenticationService.resendVerificationCode(email)
             return ResponseEntity.ok("Verification code has been sent")
+        } catch (e: RuntimeException) {
+            return ResponseEntity.badRequest().body(e.message)
+        }
+    }
+
+    @PostMapping("/logout")
+    fun logout(): ResponseEntity<Any> {
+        try {
+            SecurityContextHolder.clearContext()
+            return ResponseEntity.ok("Logged out successfully")
         } catch (e: RuntimeException) {
             return ResponseEntity.badRequest().body(e.message)
         }
