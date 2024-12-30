@@ -29,6 +29,8 @@ class SecurityConfiguration(
                     .permitAll()
                 it.requestMatchers("/auth/**")
                     .permitAll()
+                it.requestMatchers("/user/all")
+                    .hasRole("ADMIN")
                 it.anyRequest()
                     .authenticated()
             }
