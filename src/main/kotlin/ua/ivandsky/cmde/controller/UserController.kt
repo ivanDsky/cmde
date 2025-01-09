@@ -12,11 +12,13 @@ import ua.ivandsky.cmde.model.User
 import ua.ivandsky.cmde.response.UserResponse
 import ua.ivandsky.cmde.response.toUserResponse
 import ua.ivandsky.cmde.service.UserService
+import ua.ivandsky.cmde.usecase.GetAuthenticatedUserUseCase
 
 @RestController
 @RequestMapping("/user")
 class UserController(
     private val userService: UserService,
+    private val getAuthenticatedUserUseCase: GetAuthenticatedUserUseCase
 ) {
     @GetMapping("/all")
     fun getAllUsers(): ResponseEntity<List<UserResponse>> =
@@ -24,19 +26,8 @@ class UserController(
 
     @GetMapping("/")
     fun getAuthenticatedUser(): ResponseEntity<UserResponse> {
-        val authentication = SecurityContextHolder.getContext().authentication
-        val userDetails: UserDetails
-        if (authentication.principal is OAuth2User) {
-            val oAuth2User = authentication.principal as OAuth2User
-            val email = oAuth2User.attributes["email"] as? String
-            val username = oAuth2User.attributes["name"] as String
-            userDetails =
-                if (email.isNullOrBlank()) userService.loadUserByUsername(username)
-                else userService.loadUserByUsername(email)
-        } else {
-            userDetails = authentication.principal as UserDetails
-        }
-        val currentUser = userDetails as User
+        val currentUser = getAuthenticatedUserUseCase() ?:
+            return ResponseEntity.notFound().build()
         return ResponseEntity.ok(currentUser.toUserResponse())
     }
 }
