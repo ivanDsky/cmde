@@ -46,10 +46,10 @@ class OAuth2UserService(
 
     fun updateExistingUser(existingUser: User, userInfoDto: Oauth2UserInfoDto): User {
         return existingUser
-        val updatedUser = existingUser.copy(
-            username = userInfoDto.username
-        )
-        return userRepository.save(updatedUser)
+//        val updatedUser = existingUser.copy(
+//            username = userInfoDto.username
+//        )
+//        return userRepository.save(updatedUser)
     }
 
 }

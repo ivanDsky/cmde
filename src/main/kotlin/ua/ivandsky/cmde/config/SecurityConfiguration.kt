@@ -11,6 +11,7 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import ua.ivandsky.cmde.service.OAuth2UserService
+import ua.ivandsky.cmde.service.OAuthSuccessHandler
 
 @Configuration
 @EnableWebSecurity
@@ -18,6 +19,7 @@ class SecurityConfiguration(
     private val authenticationProvider: AuthenticationProvider,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
     private val oauth2UserService: OAuth2UserService,
+    private val oAuthSuccessHandler: OAuthSuccessHandler,
 ) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
@@ -39,6 +41,7 @@ class SecurityConfiguration(
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login { customizer ->
                 customizer
+                    .successHandler(oAuthSuccessHandler)
                     .userInfoEndpoint{ it.userService(oauth2UserService) }
             }
             .formLogin {
