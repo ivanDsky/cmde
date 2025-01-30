@@ -23,17 +23,25 @@ class AuthenticationController(
     private val authenticationService: AuthenticationService,
 ) {
      @PostMapping("/sign-up")
-     fun signUp(@RequestBody input: RegisterUserDto): ResponseEntity<UserResponse> {
-         val user = authenticationService.signUp(input)
-         return ResponseEntity.ok(user.toUserResponse())
+     fun signUp(@RequestBody input: RegisterUserDto): ResponseEntity<Any> {
+         try {
+             val user = authenticationService.signUp(input)
+             return ResponseEntity.ok(user.toUserResponse())
+         } catch (e : Exception) {
+             return ResponseEntity.badRequest().body(e.message)
+         }
      }
 
      @PostMapping("/login")
-     fun signIn(@RequestBody input: LoginUserDto): ResponseEntity<LoginResponse> {
-         val user = authenticationService.authenticate(input)
-         val token = jwtService.generateToken(user)
-         val expiresIn = jwtService.jwtExpiration
-         return ResponseEntity.ok(LoginResponse(token, expiresIn))
+     fun signIn(@RequestBody input: LoginUserDto): ResponseEntity<Any> {
+         try {
+             val user = authenticationService.authenticate(input)
+             val token = jwtService.generateToken(user)
+             val expiresIn = jwtService.jwtExpiration
+             return ResponseEntity.ok(LoginResponse(token, expiresIn))
+         } catch (e : Exception) {
+             return ResponseEntity.badRequest().body(e.message)
+         }
      }
 
      @PostMapping("/verify")

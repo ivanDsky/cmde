@@ -3,18 +3,22 @@ package ua.ivandsky.cmde.service
 import jakarta.mail.MessagingException
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import ua.ivandsky.cmde.dto.LoginUserDto
 import ua.ivandsky.cmde.dto.RegisterUserDto
 import ua.ivandsky.cmde.dto.VerifyUserDto
 import ua.ivandsky.cmde.model.User
+import ua.ivandsky.cmde.repository.RoleRepository
 import ua.ivandsky.cmde.repository.UserRepository
 import java.time.LocalDateTime
+import java.time.temporal.TemporalAmount
 
 @Service
 class AuthenticationService(
     private val userRepository: UserRepository,
+    private val roleRepository: RoleRepository,
     private val passwordEncoder: PasswordEncoder,
     private val authenticationManager: AuthenticationManager,
     private val emailService: EmailService,
@@ -30,24 +34,35 @@ class AuthenticationService(
             enabled = false,
         )
 
+        if(userRepository.findByEmail(input.email) != null)
+            throw IllegalArgumentException("User with email \'${input.email}\' already exists")
+
+        if(userRepository.findByUsername(input.username) != null)
+            throw IllegalArgumentException("User with username \'${input.username}\' already exists")
+
+
+        val role = roleRepository.findByName("ROLE_USER") ?: error("Unexpected behaviour during role creation")
+        user.roles = listOf(role)
         sendVerificationEmail(user)
 
         return userRepository.save(user)
     }
 
     fun authenticate(input: LoginUserDto): User {
-        val user = findUserByLogin(input)
+        val user = findUserByEmailOrUsername(input.email)
 
         if (!user.isEnabled) throw IllegalArgumentException("Account not verified. Please check your email.")
 
-        authenticationManager.authenticate(UsernamePasswordAuthenticationToken(user.username, input.password))
-
+        try {
+            authenticationManager.authenticate(UsernamePasswordAuthenticationToken(user.username, input.password))
+        } catch (e : AuthenticationException) {
+            throw IllegalArgumentException("Password is incorrect")
+        }
         return user
     }
 
     fun verifyUser(input: VerifyUserDto) {
-        val user = userRepository.findByEmail(input.email)
-            ?: throw IllegalArgumentException("User with email \"${input.email}\" not found")
+        val user = findUserByEmailOrUsername(input.email)
 
         if (LocalDateTime.now() > user.verificationExpiresAt) {
             throw IllegalArgumentException("Verification code expired. Please sign up again.")
@@ -65,11 +80,13 @@ class AuthenticationService(
     }
 
     fun resendVerificationCode(email: String) {
-        val user = userRepository.findByEmail(email)
-            ?: throw IllegalArgumentException("User with email \"$email\" not found")
+        val user = findUserByEmailOrUsername(email)
 
         if (user.isEnabled) throw IllegalArgumentException("Account already verified.")
 
+        user.verificationExpiresAt?.let {
+            if(LocalDateTime.now().plusMinutes(14).plusSeconds(30) < it) return
+        }
         user.verificationCode = generateVerificationCode()
         user.verificationExpiresAt = LocalDateTime.now().plusMinutes(15)
 
@@ -92,18 +109,15 @@ class AuthenticationService(
         return (100000..999999).random().toString()
     }
 
-    private fun findUserByLogin(loginUserDto: LoginUserDto): User {
-        if (loginUserDto.email != null) {
-            return userRepository.findByEmail(loginUserDto.email)
-                ?: throw IllegalArgumentException("User with email \"${loginUserDto.email}\" not found")
+    private fun findUserByEmailOrUsername(emailUsername: String?): User {
+        if(emailUsername == null) throw IllegalArgumentException("User didn't provide email or username")
+        return if (emailUsername.contains('@')) {
+            userRepository.findByEmail(emailUsername)
+                ?: throw IllegalArgumentException("User with email \"$emailUsername\" not found")
+        } else {
+            userRepository.findByUsername(emailUsername)
+                ?: throw IllegalArgumentException("User with username \"$emailUsername\" not found")
         }
-
-        if (loginUserDto.username != null) {
-            return userRepository.findByUsername(loginUserDto.username)
-                ?: throw IllegalArgumentException("User with username \"${loginUserDto.username}\" not found")
-        }
-
-        throw IllegalArgumentException("User didn't provide email or username")
     }
 }
 

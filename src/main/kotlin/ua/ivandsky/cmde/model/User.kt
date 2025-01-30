@@ -27,6 +27,7 @@ data class User(
     var verificationExpiresAt: LocalDateTime? = null
 ) : UserDetails {
 
+    val avatar: String get() = "https://api.dicebear.com/9.x/identicon/jpg?seed=$id"
     @ManyToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
     @JoinTable(
         name = "users_roles",
